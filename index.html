@@ -4,9 +4,48 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Audio visualizer</title>
+        <link rel="stylesheet" href="style.css" />
     </head>
     <body>
-        <button id="play">Play</button>
+        <!-- container that will host the keyboard. scrollable on the x axis -->
+        <div id="container">
+            <div id="keyboard"></div>
+        </div>
+
+        <!-- settings for the keyboard -->
+        <div class="settingsBar">
+            <div class="left">
+                <span>Volume: </span>
+                <!-- a slider to control our volume -->
+                <!-- using semantic HTML for accessibility -->
+                <input
+                    type="range"
+                    min="0.0"
+                    max="1.0"
+                    step="0.01"
+                    value="0.5"
+                    list="volumes"
+                    name="volume"
+                />
+                <!-- https://developer.mozilla.org/en-US/docs/Web/HTML/Element/datalist -->
+                <!-- a datalist element provides a set of suggested values for our volume. the browser may display these -->
+                <datalist id="volumes">
+                    <option value="0.0" label="Mute"></option>
+                    <option value="1.0" label="100%"></option>
+                </datalist>
+            </div>
+        </div>
+
+        <div class="right">
+            <span>Current waveform: </span>
+            <select name="waveform">
+                <option value="sine">Sine</option>
+                <option value="square">Square</option>
+                <option value="sawtooth">Sawtooth</option>
+                <option value="triangle">Triangle</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
 
         <script src="script.js"></script>
     </body>

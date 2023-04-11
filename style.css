@@ -1,0 +1,57 @@
+.container {
+    /* show us the extra keys on the x axis if the screen is too small */
+    overflow-x: scroll;
+    /* don't show us the scroll bar on the y axis */
+    overflow-y: hidden;
+    width: 660px;
+    height: 110px;
+    white-space: nowrap;
+    margin: 10px;
+}
+
+.keyboard {
+    width: auto;
+    padding: 0;
+    margin: 0;
+}
+
+.key {
+    cursor: pointer;
+    font: 14px "Open Sans",
+        "Lucida Grande",
+        "Arial",
+        sans-serif;
+    position: relative;
+    vertical-align: middle;
+    width: 100%;
+    height: 30px;
+}
+
+.left {
+    width: 50%;
+    position: absolute;
+    left: 0;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.left span,
+.left input {
+    vertical-align: middle;
+}
+
+.right {
+    width: 50%;
+    position: absolute;
+    right: 0;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.right span {
+    vertical-align: middle;
+}
+
+.right input {
+    vertical-align: baseline;
+}
