@@ -17,6 +17,7 @@ const volumeControl = document.querySelector("input[name='volume']");
 // an array of arrays, with each array representing one octave containing the notes in that octave
 let noteFreq = null;
 // PeriodicWave for a custom waveform we make
+// https://developer.mozilla.org/en-US/docs/Web/API/PeriodicWave
 let customWaveform = null;
 // these are the values for the custom waveform
 let sineTerms = null;
@@ -128,4 +129,128 @@ function createNoteTable() {
     noteFreq[8]["C"] = 4186.009044809578154;
 
     return noteFreq;
+}
+
+function setup() {
+    // create our table of note names and octaves
+    noteFreq = createNoteTable();
+
+    // listen for a "change" event on our volume control https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event
+    volumeControl.addEventListener("change", changeVolume, false);
+
+    // create a gain node on our audio context
+    mainGainNode = audioContext.createGain();
+    // connect this to our audio context destination
+    mainGainNode.connect(audioContext.destination);
+    // set the gain node value to our volume value
+    mainGainNode.gain.value = volumeControl.value;
+
+    noteFreq.forEach((keys, idx) => {
+        // gets a list of notes in a given octave
+        const keyList = Object.entries(keys);
+        // create a div that holds each octave's notes
+        const octaveElem = document.createElement("div");
+        // set the classname to "octave"
+        octaveElem.className = "octave";
+
+        keyList.forEach((key) => {
+            // if the note name has more than one character, skip it
+            // we're skipping the sharps for now
+            if (key[0].length === 1) {
+                octaveElem.appendChild(createKey(key[0], idx, key[1]));
+            }
+        });
+        // when each octave element has been built, append it to our keyboard
+        keyboard.appendChild(octaveElem);
+    });
+
+    // scroll into view, centering on middle C
+    document
+        .querySelector("div[data-note='B'][data-octave='5']")
+        .scrollIntoView(false);
+
+    // custom waveform build with BaseAudioContext.createPeriodicWave() https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createPeriodicWave
+    sineTerms = new Float32Array([0, 0, 1, 0, 1]);
+    cosineTerms = new Float32Array(sineTerms.length);
+    customWaveform = audioContext.createPeriodicWave(cosineTerms, sineTerms);
+
+    // oscillator list is initialized so it can receive info identifying which oscillators are associated with which keys
+    for (let i = 0; i < 9; i++) {
+        oscList[i] = {};
+    }
+}
+
+setup();
+
+// creates the key and the label
+function createKey(note, octave, freq) {
+    const keyElement = document.createElement("div");
+    const labelElement = document.createElement("div");
+
+    // add data attributes to the element for fetching info we need with events
+    keyElement.className = "key";
+    keyElement.dataset["octave"] = octave;
+    keyElement.dataset["note"] = note;
+    keyElement.dataset["frequency"] = freq;
+
+    labelElement.innerHTML = `${note}<sub>${octave}</sub>`;
+    keyElement.appendChild(labelElement);
+
+    // set up event handlers for each key
+    keyElement.addEventListener("mousedown", notePressed, false);
+    keyElement.addEventListener("mouseup", noteReleased, false);
+    keyElement.addEventListener("mouseover", notePressed, false);
+    keyElement.addEventListener("mouseleave", noteReleased, false);
+
+    return keyElement;
+}
+
+function playTone(freq) {
+    // create an oscillator
+    // https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createOscillator
+    const osc = audioContext.createOscillator();
+    // connect it to the main gain node
+    osc.connect(mainGainNode);
+
+    // grab which type of waveform we want from out select HTML element
+    const type = wavePicker.options[wavePicker.selectedIndex].value;
+
+    // if it's custom, pull from our customWaveForm values, otherwise pass through the wave type
+    if (type === "custom") {
+        osc.setPeriodicWave(customWaveform);
+    } else {
+        osc.type = type;
+    }
+
+    // pass the frequency to the oscillator
+    // https://developer.mozilla.org/en-US/docs/Web/API/OscillatorNode/frequency
+    // https://developer.mozilla.org/en-US/docs/Web/API/AudioParam
+    osc.frequency.value = freq;
+    // start the oscillator
+    osc.start();
+
+    return osc;
+}
+
+function notePressed(event) {
+    // if the primary mouse button has been clicked
+    if (event.buttons & 1) {
+        // grab the dataset of what was clicked
+        const dataset = event.target.dataset;
+
+        // if the note's not playing already
+        if (!dataset["pressed"]) {
+            // store the octave the note is in
+            const octave = Number(dataset["octave"]);
+            // call playnote function with the relevant frequency
+            // store the oscillator into oscList for future reference
+            oscList[octave][dataset["note"]] = playTone(dataset["frequency"]);
+            // set the pressed to yes, so we don't play it again
+            dataset["pressed"] = "yes";
+        }
+    }
+}
+
+function changeVolume(event) {
+    mainGainNode.gain.value = volumeControl.value;
 }
