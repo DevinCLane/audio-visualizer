@@ -157,6 +157,7 @@ function setup() {
             // if the note name has more than one character, skip it
             // we're skipping the sharps for now
             if (key[0].length === 1) {
+                // add the key to the octave element
                 octaveElem.appendChild(createKey(key[0], idx, key[1]));
             }
         });
@@ -193,7 +194,9 @@ function createKey(note, octave, freq) {
     keyElement.dataset["note"] = note;
     keyElement.dataset["frequency"] = freq;
 
+    // display the note with the little octave number underneath
     labelElement.innerHTML = `${note}<sub>${octave}</sub>`;
+    // add the label element to the key element
     keyElement.appendChild(labelElement);
 
     // set up event handlers for each key
@@ -242,15 +245,108 @@ function notePressed(event) {
         if (!dataset["pressed"]) {
             // store the octave the note is in
             const octave = Number(dataset["octave"]);
-            // call playnote function with the relevant frequency
+            // call playTone function with the relevant frequency
             // store the oscillator into oscList for future reference
             oscList[octave][dataset["note"]] = playTone(dataset["frequency"]);
-            // set the pressed to yes, so we don't play it again
+            // set the "pressed" value to yes, so we don't play it again
             dataset["pressed"] = "yes";
         }
     }
 }
 
+function noteReleased(event) {
+    // grab the dataset of what was clicked
+    const dataset = event.target.dataset;
+
+    // if the key has already been pressed
+    if (dataset && dataset["pressed"]) {
+        // grab the octave
+        const octave = Number(dataset["octave"]);
+        // stop the note
+        oscList[octave][dataset["note"]].stop();
+        // delete the note from our oscList
+        delete oscList[octave][dataset["note"]];
+        // remove the presset data-pressed attribute, to communicate that the note is no longer playing
+        delete dataset["pressed"];
+    }
+}
+
 function changeVolume(event) {
+    // if we move the slider, change the volume
     mainGainNode.gain.value = volumeControl.value;
 }
+
+const synthKeys = document.querySelectorAll(".key");
+const keyCodes = [
+    "Space",
+    "ShiftLeft",
+    "KeyZ",
+    "KeyX",
+    "KeyC",
+    "KeyV",
+    "KeyB",
+    "KeyN",
+    "KeyM",
+    "Comma",
+    "Period",
+    "Slash",
+    "ShiftRight",
+    "KeyA",
+    "KeyS",
+    "KeyD",
+    "KeyF",
+    "KeyG",
+    "KeyH",
+    "KeyJ",
+    "KeyK",
+    "KeyL",
+    "Semicolon",
+    "Quote",
+    "Enter",
+    "Tab",
+    "KeyQ",
+    "KeyW",
+    "KeyE",
+    "KeyR",
+    "KeyT",
+    "KeyY",
+    "KeyU",
+    "KeyI",
+    "KeyO",
+    "KeyP",
+    "BracketLeft",
+    "BracketRight",
+    "Digit1",
+    "Digit2",
+    "Digit3",
+    "Digit4",
+    "Digit5",
+    "Digit6",
+    "Digit7",
+    "Digit8",
+    "Digit9",
+    "Digit0",
+    "Minus",
+    "Equal",
+    "Backspace",
+    "Escape",
+];
+
+function keyNote(event) {
+    const elKey = synthKeys[keyCodes.indexOf(event.code)];
+    if (elKey) {
+        if (event.type === "keydown") {
+            elKey.tabIndex = -1;
+            elKey.focus();
+            elKey.classList.add("active");
+            notePressed({ buttons: 1, target: elKey });
+        } else {
+            elKey.classList.remove("active");
+            noteReleased({ buttons: 1, target: elKey });
+        }
+        event.preventDefault();
+    }
+}
+
+addEventListener("keydown", keyNote);
+addEventListener("keyup", keyNote);
